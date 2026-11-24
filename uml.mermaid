@@ -1,0 +1,154 @@
+classDiagram
+    direction TB
+
+    class Pessoa {
+        <<abstract>>
+        -str nome
+        -str cpf
+        +descricao()* str
+    }
+    class Hospede {
+        -str telefone
+        +descricao() str
+    }
+    class Funcionario {
+        <<abstract>>
+        -float salario_base
+        +calcular_salario()* float
+        +descricao() str
+    }
+    class Recepcionista {
+        -int checkins_realizados
+        +calcular_salario() float
+        +realizar_checkin(reserva) None
+        +realizar_checkout(reserva) None
+    }
+    class Gerente {
+        +calcular_salario() float
+        +gerar_relatorio(hotel, dia) str
+    }
+
+    class Quarto {
+        <<abstract>>
+        -int numero
+        -float diaria_base
+        +calcular_diaria()* float
+        +descricao() str
+    }
+    class QuartoSimples {
+        +calcular_diaria() float
+    }
+    class QuartoLuxo {
+        +calcular_diaria() float
+    }
+    class Suite {
+        +calcular_diaria() float
+    }
+
+    class Pagamento {
+        <<abstract>>
+        -float valor
+        +processar()* str
+    }
+    class PagamentoDinheiro {
+        -float valor_entregue
+        +processar() str
+    }
+    class PagamentoCartao {
+        -str final
+        -int parcelas
+        +processar() str
+    }
+    class PagamentoPix {
+        -str chave
+        +processar() str
+    }
+
+    class StatusReserva {
+        <<enumeration>>
+        ATIVA
+        CHECKIN
+        CHECKOUT
+        CANCELADA
+    }
+    class Periodo {
+        -date entrada
+        -date saida
+        +noites() int
+        +conflita_com(outro) bool
+        +contem(dia) bool
+    }
+    class Reserva {
+        -StatusReserva status
+        +valor_total() float
+        +paga() bool
+        +ocupa_quarto() bool
+        +pagar(pagamento) str
+        +fazer_checkin() None
+        +fazer_checkout() None
+        +cancelar() None
+    }
+    class Hotel {
+        -str nome
+        +adicionar_quarto(numero, tipo, diaria_base) Quarto
+        +buscar_quarto(numero) Quarto
+        +contratar(funcionario) None
+        +quarto_disponivel(numero, entrada, saida) bool
+        +quartos_disponiveis(entrada, saida) list
+        +reservar(hospede, numero, entrada, saida) Reserva
+        +taxa_ocupacao(dia) float
+        +folha_salarial() float
+    }
+
+    class HotelError {
+        <<exception>>
+    }
+    class QuartoNaoEncontradoError {
+        <<exception>>
+    }
+    class QuartoIndisponivelError {
+        <<exception>>
+    }
+    class ReservaInvalidaError {
+        <<exception>>
+    }
+    class PagamentoRecusadoError {
+        <<exception>>
+    }
+
+    %% Herança
+    Pessoa <|-- Hospede
+    Pessoa <|-- Funcionario
+    Funcionario <|-- Recepcionista
+    Funcionario <|-- Gerente
+    Quarto <|-- QuartoSimples
+    Quarto <|-- QuartoLuxo
+    Quarto <|-- Suite
+    Pagamento <|-- PagamentoDinheiro
+    Pagamento <|-- PagamentoCartao
+    Pagamento <|-- PagamentoPix
+    HotelError <|-- QuartoNaoEncontradoError
+    HotelError <|-- QuartoIndisponivelError
+    HotelError <|-- ReservaInvalidaError
+    HotelError <|-- PagamentoRecusadoError
+
+    %% Composição (o todo cria e controla o ciclo de vida das partes)
+    Hotel "1" *-- "0..*" Quarto : possui
+    Hotel "1" *-- "0..*" Reserva : registra
+    Reserva "1" *-- "1" Periodo : tem
+
+    %% Associação
+    Hotel "1" --> "0..*" Funcionario : emprega
+    Reserva "0..*" --> "1" Hospede : feita por
+    Reserva "0..*" --> "1" Quarto : reserva
+    Reserva "1" --> "0..1" Pagamento : paga com
+    Reserva --> StatusReserva : status
+
+    %% Dependência (uso por parâmetro, variável local ou lançamento de exceção)
+    Recepcionista ..> Reserva : usa
+    Gerente ..> Hotel : usa
+    Hotel ..> Periodo : usa
+    Hotel ..> QuartoIndisponivelError : lança
+    Hotel ..> QuartoNaoEncontradoError : lança
+    Reserva ..> ReservaInvalidaError : lança
+    Reserva ..> PagamentoRecusadoError : lança
